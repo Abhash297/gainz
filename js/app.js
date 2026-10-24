@@ -34,6 +34,45 @@ function liftLabel(id) {
   return LIFTS.find((l) => l.id === id)?.label || id;
 }
 
+function csvEscape(val) {
+  const s = String(val ?? '');
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+// One combined CSV (sets + PRs, tagged by type) for viewing/sharing — not meant
+// for re-import; JSON export/import remains the full-fidelity backup path.
+function buildCSV() {
+  const header = ['type', 'date', 'lift', 'weight', 'reps', 'notes'];
+  const rows = [
+    ...state.allSets.map((s) => ['set', s.date, liftLabel(s.lift), s.weight, s.reps, s.notes || '']),
+    ...state.allPRs.map((p) => ['pr', p.date, liftLabel(p.lift), p.weight, p.reps, p.notes || '']),
+  ].sort((a, b) => a[1].localeCompare(b[1]));
+  return [header, ...rows].map((r) => r.map(csvEscape).join(',')).join('\r\n');
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+// Stacked card row for a logged set / PR — replaces a table row so Edit/Delete
+// stay full 44pt tap targets and text doesn't get crushed on a phone-width screen.
+function setRowHTML({ primary, meta, notes, editAttr, deleteAttr }) {
+  return `
+    <div class="set-row">
+      <div class="set-row-info">
+        <span class="set-row-weight">${primary}</span>
+        <span class="set-row-meta">${meta}</span>
+        ${notes ? `<span class="set-row-notes">${escapeHtml(notes)}</span>` : ''}
+      </div>
+      <div class="set-row-actions">
+        <button class="link" ${editAttr}>Edit</button>
+        <button class="danger-link" ${deleteAttr}>Delete</button>
+      </div>
+    </div>`;
+}
+
 async function reload() {
   state.allSets = await DB.getAll();
   state.allPRs = await DB.getAllPRs();
@@ -104,26 +143,17 @@ function renderLog() {
       ${
         todaysSets.length === 0
           ? '<div class="empty-state">No sets logged yet for this lift/date.</div>'
-          : `<table class="history-table">
-              <thead><tr><th>#</th><th>Weight</th><th>Reps</th><th>Est 1RM</th><th></th></tr></thead>
-              <tbody>
-                ${todaysSets
-                  .map(
-                    (s, i) => `
-                  <tr>
-                    <td>${i + 1}</td>
-                    <td>${s.weight}</td>
-                    <td>${s.reps}</td>
-                    <td>${fmt(Stats.est1RM(s.weight, s.reps))}</td>
-                    <td class="row-actions">
-                      <button class="link" data-edit="${s.id}">Edit</button>
-                      <button class="danger-link" data-delete="${s.id}">Delete</button>
-                    </td>
-                  </tr>`
-                  )
-                  .join('')}
-              </tbody>
-            </table>`
+          : `<div class="set-list">${todaysSets
+              .map((s, i) =>
+                setRowHTML({
+                  primary: `${s.weight}kg × ${s.reps}`,
+                  meta: `Set ${i + 1} · Est 1RM ${fmt(Stats.est1RM(s.weight, s.reps))}kg`,
+                  notes: s.notes,
+                  editAttr: `data-edit="${s.id}"`,
+                  deleteAttr: `data-delete="${s.id}"`,
+                })
+              )
+              .join('')}</div>`
       }
     </div>
   `;
@@ -302,27 +332,17 @@ function renderHistory() {
       ${
         sets.length === 0
           ? '<div class="empty-state">No sets logged yet.</div>'
-          : `<table class="history-table">
-              <thead><tr><th>Date</th><th>Lift</th><th>Weight</th><th>Reps</th><th>Notes</th><th></th></tr></thead>
-              <tbody>
-                ${sets
-                  .map(
-                    (s) => `
-                  <tr>
-                    <td>${s.date}</td>
-                    <td>${liftLabel(s.lift)}</td>
-                    <td>${s.weight}</td>
-                    <td>${s.reps}</td>
-                    <td>${s.notes || ''}</td>
-                    <td class="row-actions">
-                      <button class="link" data-edit="${s.id}">Edit</button>
-                      <button class="danger-link" data-delete="${s.id}">Delete</button>
-                    </td>
-                  </tr>`
-                  )
-                  .join('')}
-              </tbody>
-            </table>`
+          : `<div class="set-list">${sets
+              .map((s) =>
+                setRowHTML({
+                  primary: `${s.weight}kg × ${s.reps}`,
+                  meta: `${liftLabel(s.lift)} · ${s.date}`,
+                  notes: s.notes,
+                  editAttr: `data-edit="${s.id}"`,
+                  deleteAttr: `data-delete="${s.id}"`,
+                })
+              )
+              .join('')}</div>`
       }
     </div>
 
@@ -332,6 +352,9 @@ function renderHistory() {
         <button class="secondary" id="export-btn">Export JSON</button>
         <button class="secondary" id="import-btn">Import JSON</button>
         <input type="file" id="import-file" accept="application/json" style="display:none" />
+      </div>
+      <div class="settings-row">
+        <button class="secondary" id="export-csv-btn">Export CSV</button>
       </div>
     </div>
   `;
@@ -372,6 +395,16 @@ function renderHistory() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `gainz-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('export-csv-btn').addEventListener('click', () => {
+    const blob = new Blob([buildCSV()], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gainz-export-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   });
@@ -444,26 +477,17 @@ function renderPRs() {
       ${
         liftPRs.length === 0
           ? '<div class="empty-state">No PRs recorded yet for this lift.</div>'
-          : `<table class="history-table">
-              <thead><tr><th>Date</th><th>Weight</th><th>Reps</th><th>Est 1RM</th><th></th></tr></thead>
-              <tbody>
-                ${liftPRs
-                  .map(
-                    (p) => `
-                  <tr>
-                    <td>${p.date}</td>
-                    <td>${p.weight}</td>
-                    <td>${p.reps}</td>
-                    <td>${fmt(Stats.est1RM(p.weight, p.reps))}</td>
-                    <td class="row-actions">
-                      <button class="link" data-pr-edit="${p.id}">Edit</button>
-                      <button class="danger-link" data-pr-delete="${p.id}">Delete</button>
-                    </td>
-                  </tr>`
-                  )
-                  .join('')}
-              </tbody>
-            </table>`
+          : `<div class="set-list">${liftPRs
+              .map((p) =>
+                setRowHTML({
+                  primary: `${p.weight}kg × ${p.reps}`,
+                  meta: `${p.date} · Est 1RM ${fmt(Stats.est1RM(p.weight, p.reps))}kg`,
+                  notes: p.notes,
+                  editAttr: `data-pr-edit="${p.id}"`,
+                  deleteAttr: `data-pr-delete="${p.id}"`,
+                })
+              )
+              .join('')}</div>`
       }
     </div>
   `;

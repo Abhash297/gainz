@@ -128,16 +128,18 @@ button.danger-link {
   border: none;
   color: var(--danger);
   cursor: pointer;
-  font-size: 0.8rem;
-  padding: 4px;
+  font-size: 0.85rem;
+  padding: 10px 8px;
+  min-height: 44px;
 }
 button.link {
   background: none;
   border: none;
   color: var(--accent);
   cursor: pointer;
-  font-size: 0.8rem;
-  padding: 4px;
+  font-size: 0.85rem;
+  padding: 10px 8px;
+  min-height: 44px;
 }
 
 .segmented {
@@ -174,17 +176,21 @@ button.link {
 
 .chart-wrap { position: relative; height: 280px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
 
-table.history-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-}
-table.history-table th, table.history-table td {
-  text-align: left;
-  padding: 8px 6px;
+.set-list { display: flex; flex-direction: column; }
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
   border-bottom: 1px solid var(--border);
 }
-table.history-table th { color: var(--text-dim); font-weight: 500; }
+.set-row:last-child { border-bottom: none; }
+.set-row-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.set-row-weight { font-weight: 600; font-size: 1rem; }
+.set-row-meta { font-size: 0.8rem; color: var(--text-dim); }
+.set-row-notes { font-size: 0.78rem; color: var(--text-dim); font-style: italic; overflow-wrap: anywhere; }
+.set-row-actions { display: flex; gap: 2px; flex-shrink: 0; }
 
 .row-actions { display: flex; gap: 6px; }
 
