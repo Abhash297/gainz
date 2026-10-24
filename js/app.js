@@ -261,7 +261,10 @@ function renderGraphs() {
   const { lift, period, series } = state.graphs;
   const sets = state.allSets.filter((s) => s.lift === lift);
   const prs = state.allPRs.filter((p) => p.lift === lift);
-  const referencePR = Stats.actualPRs([...sets, ...prs]).best?.weight;
+  // % of PR and the chart's PR reference line must use only what's deliberately
+  // recorded in the PRs tab — not whatever happens to be the heaviest training
+  // entry ever logged (a one-off heavy single isn't a "PR" until you record it).
+  const referencePR = Stats.actualPRs(prs).best?.weight;
 
   root.innerHTML = `
     <h2>Graphs</h2>
