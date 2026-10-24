@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>GainZ</title>
+<meta name="theme-color" content="#1f6feb" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <h1>GainZ</h1>
+</header>
+
+<main id="view-root"></main>
+
+<nav class="tabbar">
+  <button class="tab-btn" data-view="log">Log</button>
+  <button class="tab-btn" data-view="dashboard">Dashboard</button>
+  <button class="tab-btn" data-view="prs">PRs</button>
+  <button class="tab-btn" data-view="graphs">Graphs</button>
+  <button class="tab-btn" data-view="history">History</button>
+</nav>
+
+<script src="vendor/chart.umd.js"></script>
+<script src="js/db.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
