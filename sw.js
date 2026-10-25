@@ -1,4 +1,4 @@
-const CACHE = 'gainz-v10';
+const CACHE = 'gainz-v11';
 const ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,9 @@ const ASSETS = [
   './css/style.css',
   './js/db.js',
   './js/stats.js',
+  './js/nutrition-stats.js',
+  './js/foods-data.js',
+  './js/ai-estimate.js',
   './js/charts.js',
   './js/app.js',
   './vendor/chart.umd.js',
@@ -28,14 +31,21 @@ self.addEventListener('activate', (e) => {
 
 // Network-first: always prefer the latest files when online so a normal
 // reload shows new code immediately; fall back to cache only when offline.
+// Only intercept same-origin GET requests — cross-origin calls (e.g. the
+// Anthropic API for AI food estimates) and non-GET requests (POST) pass
+// straight through untouched; the Cache API can't store non-GET responses.
 self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) {
+    return;
+  }
   e.respondWith(
-    fetch(e.request)
+    fetch(req)
       .then((res) => {
         const copy = res.clone();
-        caches.open(CACHE).then((cache) => cache.put(e.request, copy));
+        caches.open(CACHE).then((cache) => cache.put(req, copy));
         return res;
       })
-      .catch(() => caches.match(e.request))
+      .catch(() => caches.match(req))
   );
 });

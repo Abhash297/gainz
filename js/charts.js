@@ -119,3 +119,56 @@ function renderChart(canvas, sets, prs, period, activeSeries, referencePR) {
     },
   });
 }
+
+// ---------- Nutrition chart ----------
+
+let activeFoodChart = null;
+
+const FOOD_SERIES_DEFS = {
+  kcal: { label: 'Calories', color: '#1f6feb', yAxisID: 'y' },
+  protein: { label: 'Protein (g)', color: '#2dd4bf', yAxisID: 'y1' },
+  carbs: { label: 'Carbs (g)', color: '#e3b341', yAxisID: 'y1' },
+  fat: { label: 'Fat (g)', color: '#f85149', yAxisID: 'y1' },
+};
+
+function renderFoodChart(canvas, foodLog, period, activeSeries) {
+  const buckets = NutritionStats.series(foodLog, period);
+  const labels = buckets.map((d) => d.anchor);
+
+  const datasets = activeSeries.map((key) => {
+    const def = FOOD_SERIES_DEFS[key];
+    return {
+      label: def.label,
+      data: buckets.map((d) => Math.round(d[key] * 10) / 10),
+      borderColor: def.color,
+      backgroundColor: def.color,
+      yAxisID: def.yAxisID,
+      tension: 0.25,
+      pointRadius: 3,
+      spanGaps: true,
+    };
+  });
+
+  if (activeFoodChart) activeFoodChart.destroy();
+  activeFoodChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: { position: 'left', title: { display: true, text: 'kcal' }, display: activeSeries.includes('kcal') },
+        y1: {
+          position: 'right',
+          title: { display: true, text: 'grams' },
+          grid: { drawOnChartArea: false },
+          display: activeSeries.some((k) => k !== 'kcal'),
+        },
+      },
+      plugins: {
+        legend: { labels: { color: getComputedStyle(document.body).color } },
+      },
+    },
+  });
+}
