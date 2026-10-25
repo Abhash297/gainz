@@ -435,7 +435,7 @@ button.link {
 .pr-card-top { display: flex; justify-content: space-between; align-items: center; }
 .pr-card-name { display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 700; }
 .pr-card-date { font-size: 0.75rem; color: var(--text-dim); }
-.pr-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.pr-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
 .pr-stat { background: var(--surface-2); border-radius: 11px; padding: 9px 10px; }
 .pr-stat-label { font-size: 0.68rem; color: var(--text-dim); }
 .pr-stat-value { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; }

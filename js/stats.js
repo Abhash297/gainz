@@ -1,14 +1,14 @@
-// Derived stats: Epley est1RM, PRs, current weight, weekly/monthly aggregation.
+// Derived stats: PRs, current weight, weekly/monthly aggregation.
+// Deliberately no 1RM estimation formula (Epley etc.) — any such formula is an
+// approximation with real error margins (~5-10%, worse above ~10 reps), and
+// showing a computed number next to real recorded weights risks it reading as
+// measured fact rather than a guess. Only actual recorded weights are shown.
 const LIFTS = [
   { id: 'squat', label: 'Squat' },
   { id: 'bench', label: 'Bench Press' },
   { id: 'deadlift', label: 'Deadlift' },
   { id: 'ohp', label: 'Overhead Press' },
 ];
-
-function est1RM(weight, reps) {
-  return weight * (1 + reps / 30);
-}
 
 // Parse a YYYY-MM-DD string as a UTC midnight instant, ignoring local timezone
 // (plain `new Date(str)` / `new Date(str+'T00:00:00')` parse as local time and
@@ -80,8 +80,6 @@ function monthAnchor(dateStr) {
 }
 
 const Stats = {
-  est1RM,
-
   // Bucket key/anchor for a single date — used by charts.js to place PR markers
   // on the same week/month axis as the aggregated training series.
   bucketKey(dateStr, period) {
@@ -91,7 +89,7 @@ const Stats = {
     return anchorFnFor(period)(dateStr);
   },
 
-  // Series for graphing: [{key, anchor, topWeight, workingWeight, volume, estMax, pctPR}]
+  // Series for graphing: [{key, anchor, topWeight, workingWeight, volume, pctPR}]
   // prWeight is optional — when given, each bucket's pctPR = topWeight/prWeight*100,
   // i.e. what % of the all-time PR that session's top set represents (intensity).
   //
@@ -104,10 +102,8 @@ const Stats = {
   // which is correct when the working set and the top set are the same set.
   series(sets, period, prWeight) {
     return groupBy(sets, period).map((bucket) => {
-      let estMax = 0;
       let volume = 0;
       for (const s of bucket.sets) {
-        estMax = Math.max(estMax, est1RM(s.weight, s.reps));
         volume += s.weight * s.reps;
       }
 
@@ -119,7 +115,7 @@ const Stats = {
       const others = bucket.sets.filter((s) => s.id !== chosenTop.id);
       const workingWeight = others.length > 0 ? others.reduce((sum, s) => sum + s.weight, 0) / others.length : topWeight;
 
-      const result = { key: bucket.key, anchor: bucket.anchor, topWeight, workingWeight, volume, estMax };
+      const result = { key: bucket.key, anchor: bucket.anchor, topWeight, workingWeight, volume };
       if (prWeight) result.pctPR = (topWeight / prWeight) * 100;
       return result;
     });
@@ -141,19 +137,5 @@ const Stats = {
       if (!prev || s.weight > prev.weight) byReps[s.reps] = s;
     }
     return { best, byReps };
-  },
-
-  estimatedPR(sets) {
-    if (sets.length === 0) return null;
-    let best = sets[0];
-    let bestEst = est1RM(best.weight, best.reps);
-    for (const s of sets) {
-      const e = est1RM(s.weight, s.reps);
-      if (e > bestEst) {
-        bestEst = e;
-        best = s;
-      }
-    }
-    return { set: best, est: bestEst };
   },
 };

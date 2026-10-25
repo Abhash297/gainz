@@ -311,7 +311,7 @@ function renderLog() {
               .map((s, i) =>
                 setRowHTML({
                   primary: `${s.weight}kg × ${s.reps}`,
-                  meta: `Set ${i + 1} · Est 1RM ${fmt(Stats.est1RM(s.weight, s.reps))}kg`,
+                  meta: `Set ${i + 1}`,
                   notes: s.notes,
                   editAttr: `data-edit="${s.id}"`,
                   deleteAttr: `data-delete="${s.id}"`,
@@ -426,7 +426,6 @@ function renderDashboard() {
         }
         const current = Stats.current(sets);
         const { best } = Stats.actualPRs(allTimeBest);
-        const estPR = Stats.estimatedPR(allTimeBest);
         const last4 = sets.slice(-4).map((s) => s.weight);
         const delta = last4.length >= 2 ? last4[last4.length - 1] - last4[0] : 0;
         const hue = LIFT_HUES[l.id];
@@ -450,8 +449,8 @@ function renderDashboard() {
                 <div class="stat-mini-value">${best.weight}kg</div>
               </div>
               <div>
-                <div class="stat-mini-label">Est. 1RM</div>
-                <div class="stat-mini-value">${fmt(estPR.est)}kg</div>
+                <div class="stat-mini-label">at reps</div>
+                <div class="stat-mini-value">${best.reps}</div>
               </div>
             </div>
           </div>`;
@@ -736,7 +735,6 @@ function renderPRs() {
             <div class="pr-stat-grid">
               <div class="pr-stat"><div class="pr-stat-label">Weight</div><div class="pr-stat-value">${p.weight}kg</div></div>
               <div class="pr-stat"><div class="pr-stat-label">Reps</div><div class="pr-stat-value">${p.reps}</div></div>
-              <div class="pr-stat"><div class="pr-stat-label">Est. 1RM</div><div class="pr-stat-value">${fmt(Stats.est1RM(p.weight, p.reps))}kg</div></div>
             </div>
             ${p.notes ? `<div class="set-row-notes" style="margin-top:10px">${escapeHtml(p.notes)}</div>` : ''}
             <div class="set-row-actions" style="justify-content:flex-end;margin-top:8px">
@@ -1075,6 +1073,23 @@ function renderFoodDashboard() {
   root.innerHTML = `
     <h2>Today — ${today}</h2>
     <div class="card cal-card">
+      ${
+        targets.kcal
+          ? `<div class="cal-ring-wrap">
+        <div class="cal-ring">
+          <svg viewBox="0 0 120 120" width="176" height="176" style="transform:rotate(-90deg)">
+            <defs><linearGradient id="calRingGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent-bright)"></stop><stop offset="1" stop-color="var(--accent)"></stop></linearGradient></defs>
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--surface-2)" stroke-width="10"></circle>
+            <circle cx="60" cy="60" r="52" fill="none" stroke="url(#calRingGrad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(Math.min(1, totals.kcal / targets.kcal) * 326.7).toFixed(1)} 326.7"></circle>
+          </svg>
+          <div class="cal-ring-center">
+            <div class="cal-ring-pct">${Math.round(Math.min(100, (totals.kcal / targets.kcal) * 100))}%</div>
+            <div class="cal-ring-label">of daily target</div>
+          </div>
+        </div>
+      </div>`
+          : ''
+      }
       <div class="cal-card-top">
         <div>
           <div class="cal-card-label">Calories</div>
@@ -1089,24 +1104,8 @@ function renderFoodDashboard() {
             : ''
         }
       </div>
+      ${targets.kcal ? `<div class="progress-bar"><div class="progress-bar-fill" style="width:${Math.min(100, Math.round((totals.kcal / targets.kcal) * 100))}%;background:linear-gradient(90deg,var(--accent),var(--accent-bright))"></div></div>` : ''}
     </div>
-    ${
-      targets.kcal
-        ? `<div class="cal-ring-wrap">
-      <div class="cal-ring">
-        <svg viewBox="0 0 120 120" width="176" height="176" style="transform:rotate(-90deg)">
-          <defs><linearGradient id="calRingGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent-bright)"></stop><stop offset="1" stop-color="var(--accent)"></stop></linearGradient></defs>
-          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--surface-2)" stroke-width="10"></circle>
-          <circle cx="60" cy="60" r="52" fill="none" stroke="url(#calRingGrad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(Math.min(1, totals.kcal / targets.kcal) * 326.7).toFixed(1)} 326.7"></circle>
-        </svg>
-        <div class="cal-ring-center">
-          <div class="cal-ring-pct">${Math.round(Math.min(100, (totals.kcal / targets.kcal) * 100))}%</div>
-          <div class="cal-ring-label">of daily target</div>
-        </div>
-      </div>
-    </div>`
-        : ''
-    }
     ${macroCard('Protein', 'var(--macro-protein)', totals.protein, targets.protein)}
     ${macroCard('Carbs', 'var(--macro-carbs)', totals.carbs, targets.carbs)}
     ${macroCard('Fat', 'var(--macro-fat)', totals.fat, targets.fat)}
