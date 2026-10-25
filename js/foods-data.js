@@ -126,6 +126,60 @@ const FOODS_DATA = [
   { name: 'Honey', kcal: 304, protein: 0.3, carbs: 82, fat: 0 },
   { name: 'Hummus', kcal: 166, protein: 8, carbs: 14, fat: 10 },
 
+  // Indian cuisine — breads
+  { name: 'Roti/Chapati, plain', kcal: 297, protein: 11, carbs: 55, fat: 4 },
+  { name: 'Naan', kcal: 310, protein: 9, carbs: 50, fat: 8 },
+  { name: 'Paratha, plain', kcal: 330, protein: 6, carbs: 45, fat: 14 },
+  { name: 'Puri', kcal: 365, protein: 6, carbs: 40, fat: 20 },
+
+  // Indian cuisine — rice dishes
+  { name: 'Chicken biryani', kcal: 150, protein: 8, carbs: 17, fat: 6 },
+  { name: 'Vegetable pulao', kcal: 130, protein: 3, carbs: 22, fat: 3.5 },
+  { name: 'Jeera rice', kcal: 150, protein: 3, carbs: 26, fat: 4 },
+
+  // Indian cuisine — dal / legumes
+  { name: 'Dal tadka', kcal: 104, protein: 6, carbs: 14, fat: 3 },
+  { name: 'Rajma (kidney bean curry)', kcal: 140, protein: 7, carbs: 18, fat: 4.5 },
+  { name: 'Chana masala', kcal: 164, protein: 7, carbs: 20, fat: 6 },
+  { name: 'Sambar', kcal: 70, protein: 3, carbs: 10, fat: 2 },
+
+  // Indian cuisine — vegetable curries
+  { name: 'Paneer butter masala', kcal: 220, protein: 8, carbs: 9, fat: 17 },
+  { name: 'Palak paneer', kcal: 180, protein: 8, carbs: 7, fat: 13 },
+  { name: 'Aloo gobi', kcal: 110, protein: 2.5, carbs: 14, fat: 5 },
+  { name: 'Baingan bharta', kcal: 95, protein: 2, carbs: 9, fat: 6 },
+  { name: 'Mixed vegetable curry', kcal: 100, protein: 3, carbs: 11, fat: 5 },
+
+  // Indian cuisine — non-veg curries
+  { name: 'Chicken curry, home-style', kcal: 180, protein: 15, carbs: 6, fat: 11 },
+  { name: 'Butter chicken', kcal: 240, protein: 16, carbs: 8, fat: 16 },
+  { name: 'Chicken tikka', kcal: 165, protein: 25, carbs: 3, fat: 6 },
+  { name: 'Fish curry', kcal: 140, protein: 14, carbs: 5, fat: 8 },
+  { name: 'Mutton curry', kcal: 220, protein: 18, carbs: 6, fat: 14 },
+  { name: 'Egg curry', kcal: 160, protein: 9, carbs: 6, fat: 11 },
+
+  // Indian cuisine — dairy
+  { name: 'Paneer', kcal: 265, protein: 18, carbs: 1.2, fat: 21 },
+  { name: 'Curd/Dahi, plain', kcal: 60, protein: 3.5, carbs: 4.7, fat: 3.3 },
+  { name: 'Ghee', kcal: 900, protein: 0, carbs: 0, fat: 100 },
+  { name: 'Lassi, sweet', kcal: 110, protein: 3, carbs: 17, fat: 3 },
+
+  // Indian cuisine — snacks & breakfast
+  { name: 'Samosa', kcal: 260, protein: 4, carbs: 28, fat: 15 },
+  { name: 'Pakora', kcal: 280, protein: 5, carbs: 25, fat: 18 },
+  { name: 'Dhokla', kcal: 160, protein: 6, carbs: 25, fat: 4 },
+  { name: 'Idli', kcal: 140, protein: 4, carbs: 28, fat: 0.5 },
+  { name: 'Dosa, plain', kcal: 168, protein: 3.9, carbs: 28, fat: 3.7 },
+  { name: 'Vada', kcal: 290, protein: 10, carbs: 30, fat: 15 },
+  { name: 'Upma', kcal: 190, protein: 4, carbs: 30, fat: 6 },
+  { name: 'Poha', kcal: 130, protein: 2.5, carbs: 24, fat: 3.5 },
+
+  // Indian cuisine — sweets
+  { name: 'Gulab jamun', kcal: 330, protein: 4, carbs: 50, fat: 13 },
+  { name: 'Jalebi', kcal: 370, protein: 2, carbs: 60, fat: 14 },
+  { name: 'Kheer', kcal: 130, protein: 3, carbs: 20, fat: 4 },
+  { name: 'Barfi', kcal: 380, protein: 6, carbs: 50, fat: 17 },
+
   // Drinks
   { name: 'Orange juice', kcal: 45, protein: 0.7, carbs: 10, fat: 0.2 },
   { name: 'Cola', kcal: 41, protein: 0, carbs: 10.6, fat: 0 },
