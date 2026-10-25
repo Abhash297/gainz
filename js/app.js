@@ -3,19 +3,27 @@ const root = document.getElementById('view-root');
 const tabbarEl = document.getElementById('tabbar');
 const modeSwitchEl = document.getElementById('mode-switch');
 
+const TAB_ICONS = {
+  log: 'M12 5v14M5 12h14',
+  dashboard: 'M4 4h7v9H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 15h7v5H4z',
+  prs: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
+  graphs: 'M3 17l5-6 4 3 8-9M3 21h18',
+  history: 'M12 7v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+};
+
 const TABS = {
   lifting: [
-    { id: 'log', label: 'Log' },
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'prs', label: 'PRs' },
-    { id: 'graphs', label: 'Graphs' },
-    { id: 'history', label: 'History' },
+    { id: 'log', label: 'Log', icon: TAB_ICONS.log },
+    { id: 'dashboard', label: 'Dashboard', icon: TAB_ICONS.dashboard },
+    { id: 'prs', label: 'PRs', icon: TAB_ICONS.prs },
+    { id: 'graphs', label: 'Graphs', icon: TAB_ICONS.graphs },
+    { id: 'history', label: 'History', icon: TAB_ICONS.history },
   ],
   nutrition: [
-    { id: 'food-log', label: 'Log' },
-    { id: 'food-dashboard', label: 'Dashboard' },
-    { id: 'food-graphs', label: 'Graphs' },
-    { id: 'food-history', label: 'History' },
+    { id: 'food-log', label: 'Log', icon: TAB_ICONS.log },
+    { id: 'food-dashboard', label: 'Dashboard', icon: TAB_ICONS.dashboard },
+    { id: 'food-graphs', label: 'Graphs', icon: TAB_ICONS.graphs },
+    { id: 'food-history', label: 'History', icon: TAB_ICONS.history },
   ],
 };
 
@@ -100,6 +108,27 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+// Groups a list of {date,...} items into [date, items[]] pairs, preserving
+// the input's date ordering (callers pass already-sorted arrays).
+function groupByDate(items) {
+  const map = new Map();
+  for (const item of items) {
+    if (!map.has(item.date)) map.set(item.date, []);
+    map.get(item.date).push(item);
+  }
+  return [...map.entries()];
+}
+
+function formatDayLabel(dateStr) {
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  if (dateStr === today) return 'Today';
+  if (dateStr === yesterday) return 'Yesterday';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
 function allFoods() {
   return [...FOODS_DATA, ...state.allCustomFoods];
 }
@@ -132,7 +161,7 @@ function setRowHTML({ primary, meta, notes, editAttr, deleteAttr, isTopSet }) {
       </div>
       <div class="set-row-actions">
         <button class="link" ${editAttr}>Edit</button>
-        <button class="danger-link" ${deleteAttr}>Delete</button>
+        <button class="icon-delete-btn" ${deleteAttr} aria-label="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
       </div>
     </div>`;
 }
@@ -147,7 +176,13 @@ async function reload() {
 function renderTabBar() {
   const tabs = TABS[state.mode];
   tabbarEl.innerHTML = tabs
-    .map((t) => `<button class="tab-btn ${t.id === state.view ? 'active' : ''}" data-view="${t.id}">${t.label}</button>`)
+    .map((t) => {
+      const active = t.id === state.view;
+      return `<button class="tab-btn ${active ? 'active' : ''}" data-view="${t.id}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${active ? 2.4 : 1.9}" stroke-linecap="round" stroke-linejoin="round"><path d="${t.icon}"></path></svg>
+        ${t.label}
+      </button>`;
+    })
     .join('');
   tabbarEl.querySelectorAll('.tab-btn').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
 }
@@ -160,6 +195,7 @@ function setMode(mode) {
 function setView(view) {
   state.view = view;
   modeSwitchEl.querySelectorAll('.mode-btn').forEach((b) => b.classList.toggle('active', b.dataset.mode === state.mode));
+  document.getElementById('mode-thumb').classList.toggle('right', state.mode === 'nutrition');
   renderTabBar();
   render();
 }
@@ -167,10 +203,13 @@ function setView(view) {
 modeSwitchEl.querySelectorAll('.mode-btn').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
 
 // Theme toggle — explicit choice (localStorage) always wins over OS
-// preference; icon reflects the CURRENTLY active theme, not the one you'd
-// switch to. index.html applies a saved choice before first paint to avoid
-// a flash of the wrong theme.
+// preference; icon shows the theme tapping it would switch TO (sun while
+// dark is active, moon while light is active). index.html applies a saved
+// choice before first paint to avoid a flash of the wrong theme.
 const themeBtn = document.getElementById('theme-btn');
+const SUN_PATH =
+  'M12 8a4 4 0 100 8 4 4 0 000-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4';
+const MOON_PATH = 'M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z';
 
 function effectiveTheme() {
   const saved = localStorage.getItem('gainz-theme');
@@ -179,7 +218,8 @@ function effectiveTheme() {
 }
 
 function updateThemeIcon() {
-  themeBtn.textContent = effectiveTheme() === 'dark' ? '🌙' : '☀️';
+  const path = effectiveTheme() === 'dark' ? SUN_PATH : MOON_PATH;
+  themeBtn.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"></path></svg>`;
 }
 
 themeBtn.addEventListener('click', () => {
@@ -247,9 +287,11 @@ function renderLog() {
             <input type="number" id="f-reps" step="1" min="1" inputmode="numeric" required />
           </div>
         </div>
-        <label class="field-checkbox">
+        <label class="top-toggle">
           <input type="checkbox" id="f-top-set" />
-          This is my top set for the session
+          <span class="top-toggle-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>
+          Top set
+          <span class="top-toggle-hint">counts toward PR &amp; 1RM</span>
         </label>
         <div class="field">
           <label for="f-notes">Notes (optional)</label>
@@ -348,6 +390,25 @@ function renderLog() {
 
 // ---------- Dashboard view ----------
 
+const STAR_PATH = 'M12 2l3 6.5 7 .9-5.2 4.8 1.4 7L12 17.8 5.8 21.2l1.4-7L2 9.4l7-.9z';
+
+const LIFT_HUES = { squat: 255, bench: 200, deadlift: 300, ohp: 150 };
+
+function sparklineSVG(values, color) {
+  if (values.length < 2) return '<div style="height:34px"></div>';
+  const mn = Math.min(...values);
+  const mx = Math.max(...values);
+  const range = mx - mn || 1;
+  const pts = values.map((v, i) => [4 + i * (112 / (values.length - 1)), 30 - 26 * ((v - mn) / range)]);
+  const points = pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  const [lx, ly] = pts[pts.length - 1];
+  const c = color || 'var(--accent-bright)';
+  return `<svg class="sparkline" viewBox="0 0 120 34" width="100%" height="34">
+    <polyline points="${points}" fill="none" style="stroke:${c}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline>
+    <circle cx="${lx}" cy="${ly}" r="3.4" style="fill:${c};stroke:var(--surface)" stroke-width="2"></circle>
+  </svg>`;
+}
+
 function renderDashboard() {
   root.innerHTML = `
     <h2>Dashboard</h2>
@@ -361,19 +422,38 @@ function renderDashboard() {
         // of whether it was logged as part of regular training.
         const allTimeBest = [...sets, ...prs];
         if (sets.length === 0 && prs.length === 0) {
-          return `<div class="card lift-card"><h3>${l.label}</h3><div class="empty-state">No data yet</div></div>`;
+          return `<div class="card lift-card"><div class="lift-card-label">${l.label}</div><div class="empty-state">No data yet</div></div>`;
         }
         const current = Stats.current(sets);
         const { best } = Stats.actualPRs(allTimeBest);
         const estPR = Stats.estimatedPR(allTimeBest);
         const last4 = sets.slice(-4).map((s) => s.weight);
+        const delta = last4.length >= 2 ? last4[last4.length - 1] - last4[0] : 0;
+        const hue = LIFT_HUES[l.id];
+        const color = `oklch(0.72 0.15 ${hue})`;
+        const tint = `oklch(0.7 0.14 ${hue} / 0.14)`;
         return `
-          <div class="card lift-card">
-            <h3>${l.label}</h3>
-            <div class="stat-row"><span class="stat-label">Current</span><span class="stat-value">${current ? `${current.weight}kg × ${current.reps}` : '—'}</span></div>
-            <div class="stat-row"><span class="stat-label">Actual PR</span><span class="stat-value">${best.weight}kg × ${best.reps} <span class="pr-star">★</span></span></div>
-            <div class="stat-row"><span class="stat-label">Est. PR</span><span class="stat-value">${fmt(estPR.est)}kg</span></div>
-            <div class="stat-row"><span class="stat-label">Last 4</span><span class="stat-value">${last4.length ? last4.join(' → ') : '—'}</span></div>
+          <div class="card lift-card" style="background-image:linear-gradient(160deg,${tint},transparent 60%)">
+            <div class="lift-card-top">
+              <span class="lift-card-label">${l.label}</span>
+              <span class="delta-badge ${delta > 0 ? 'pos' : 'flat'}">${delta >= 0 ? '+' : ''}${fmt(delta)}kg</span>
+            </div>
+            <div>
+              <div class="lift-card-figure">${current ? fmt(current.weight) : '—'}<span class="unit">kg</span></div>
+              <div class="lift-card-sub">working weight</div>
+            </div>
+            ${sparklineSVG(last4, color)}
+            <div class="lift-card-range"><span>last 4 sessions</span><span>${last4.length ? `${fmt(last4[0])} → ${fmt(last4[last4.length - 1])}` : '—'}</span></div>
+            <div class="lift-card-footer">
+              <div>
+                <div class="stat-mini-label"><span class="pr-star"><svg width="11" height="11" viewBox="0 0 24 24" style="fill:var(--gold)"><path d="${STAR_PATH}"></path></svg></span>PR</div>
+                <div class="stat-mini-value">${best.weight}kg</div>
+              </div>
+              <div>
+                <div class="stat-mini-label">Est. 1RM</div>
+                <div class="stat-mini-value">${fmt(estPR.est)}kg</div>
+              </div>
+            </div>
           </div>`;
       }).join('')}
     </div>
@@ -390,6 +470,26 @@ function renderGraphs() {
   // recorded in the PRs tab — not whatever happens to be the heaviest training
   // entry ever logged (a one-off heavy single isn't a "PR" until you record it).
   const referencePR = Stats.actualPRs(prs).best?.weight;
+
+  // Latest-value + delta header above the chart, shown only when exactly one
+  // metric is active (unambiguous to summarize; skipped when overlaying more).
+  let chartHeaderHTML = '';
+  if (series.length === 1) {
+    const buckets = Stats.series(sets, period, referencePR);
+    if (buckets.length > 0) {
+      const key = series[0];
+      const def = SERIES_DEFS[key];
+      const vals = buckets.map((d) => d[key]);
+      const latest = vals[vals.length - 1];
+      const delta = vals.length >= 2 ? latest - vals[0] : 0;
+      const unit = key === 'pctPR' ? '%' : 'kg';
+      chartHeaderHTML = `
+        <div class="chart-header">
+          <div><div class="chart-header-title">${def.label}</div><div class="chart-header-value">${fmt(latest)}${unit}</div></div>
+          <span class="delta-badge ${delta > 0 ? 'pos' : 'flat'}">${delta >= 0 ? '+' : ''}${fmt(delta)}${unit}</span>
+        </div>`;
+    }
+  }
 
   root.innerHTML = `
     <h2>Graphs</h2>
@@ -408,7 +508,10 @@ function renderGraphs() {
       <button class="chip ${series.includes('pctPR') ? 'active' : ''}" data-series="pctPR" ${referencePR ? '' : 'disabled title="Record a PR first"'}>% of PR</button>
     </div>
     <div class="chart-wrap">
-      ${sets.length === 0 && prs.length === 0 ? '<div class="empty-state">No data yet for this lift.</div>' : '<canvas id="chart-canvas"></canvas>'}
+      ${chartHeaderHTML}
+      <div class="chart-canvas-box">
+        ${sets.length === 0 && prs.length === 0 ? '<div class="empty-state">No data yet for this lift.</div>' : '<canvas id="chart-canvas"></canvas>'}
+      </div>
     </div>
   `;
 
@@ -457,24 +560,30 @@ function renderHistory() {
       <button class="chip ${liftFilter === 'all' ? 'active' : ''}" data-filter="all">All</button>
       ${LIFTS.map((l) => `<button class="chip ${liftFilter === l.id ? 'active' : ''}" data-filter="${l.id}">${l.label}</button>`).join('')}
     </div>
-    <div class="card">
-      ${
-        sets.length === 0
-          ? '<div class="empty-state">No sets logged yet.</div>'
-          : `<div class="set-list">${sets
+    ${
+      sets.length === 0
+        ? '<div class="card"><div class="empty-state">No sets logged yet.</div></div>'
+        : groupByDate(sets)
+            .map(
+              ([date, dayItems]) => `
+          <div class="history-day">
+            <div class="history-day-header"><span>${formatDayLabel(date)}</span><span>${dayItems.length} set${dayItems.length === 1 ? '' : 's'}</span></div>
+            <div class="set-list">${dayItems
               .map((s) =>
                 setRowHTML({
                   primary: `${s.weight}kg × ${s.reps}`,
-                  meta: `${liftLabel(s.lift)} · ${s.date}`,
+                  meta: liftLabel(s.lift),
                   notes: s.notes,
                   editAttr: `data-edit="${s.id}"`,
                   deleteAttr: `data-delete="${s.id}"`,
                   isTopSet: s.isTopSet,
                 })
               )
-              .join('')}</div>`
-      }
-    </div>
+              .join('')}</div>
+          </div>`
+            )
+            .join('')
+    }
 
     <h2>Backup</h2>
     <div class="card">
@@ -613,23 +722,31 @@ function renderPRs() {
     </div>
 
     <h2>${liftLabel(lift)} — recorded PRs</h2>
-    <div class="card">
-      ${
-        liftPRs.length === 0
-          ? '<div class="empty-state">No PRs recorded yet for this lift.</div>'
-          : `<div class="set-list">${liftPRs
-              .map((p) =>
-                setRowHTML({
-                  primary: `${p.weight}kg × ${p.reps}`,
-                  meta: `${p.date} · Est 1RM ${fmt(Stats.est1RM(p.weight, p.reps))}kg`,
-                  notes: p.notes,
-                  editAttr: `data-pr-edit="${p.id}"`,
-                  deleteAttr: `data-pr-delete="${p.id}"`,
-                })
-              )
-              .join('')}</div>`
-      }
-    </div>
+    ${
+      liftPRs.length === 0
+        ? '<div class="card"><div class="empty-state">No PRs recorded yet for this lift.</div></div>'
+        : liftPRs
+            .map(
+              (p) => `
+          <div class="card pr-card">
+            <div class="pr-card-top">
+              <span class="pr-card-name"><span class="pr-star"><svg width="14" height="14" viewBox="0 0 24 24" style="fill:var(--gold)"><path d="${STAR_PATH}"></path></svg></span>${p.weight}kg × ${p.reps}</span>
+              <span class="pr-card-date">${p.date}</span>
+            </div>
+            <div class="pr-stat-grid">
+              <div class="pr-stat"><div class="pr-stat-label">Weight</div><div class="pr-stat-value">${p.weight}kg</div></div>
+              <div class="pr-stat"><div class="pr-stat-label">Reps</div><div class="pr-stat-value">${p.reps}</div></div>
+              <div class="pr-stat"><div class="pr-stat-label">Est. 1RM</div><div class="pr-stat-value">${fmt(Stats.est1RM(p.weight, p.reps))}kg</div></div>
+            </div>
+            ${p.notes ? `<div class="set-row-notes" style="margin-top:10px">${escapeHtml(p.notes)}</div>` : ''}
+            <div class="set-row-actions" style="justify-content:flex-end;margin-top:8px">
+              <button class="link" data-pr-edit="${p.id}">Edit</button>
+              <button class="icon-delete-btn" data-pr-delete="${p.id}" aria-label="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+            </div>
+          </div>`
+            )
+            .join('')
+    }
   `;
 
   document.getElementById('pr-lift').addEventListener('change', (e) => {
@@ -936,28 +1053,64 @@ function renderFoodDashboard() {
     fat: settings.fatTarget,
   };
   const hasAnyTarget = targets.kcal || targets.protein || targets.carbs || targets.fat;
+  const calLeft = targets.kcal ? targets.kcal - totals.kcal : null;
 
-  function macroRow(label, value, target, unit) {
-    const pct = target ? Math.min(100, Math.round((value / target) * 100)) : null;
+  function macroCard(name, color, value, target) {
+    const pct = target ? Math.min(100, Math.round((value / target) * 100)) : 0;
     return `
-      <div class="macro-row">
-        <div class="macro-row-label">
-          <span>${label}</span>
-          <span>${fmt(value)}${unit}${target ? ` / ${target}${unit}` : ''}</span>
+      <div class="card macro-card">
+        <div class="macro-card-top">
+          <span class="macro-card-name"><span class="macro-dot" style="background:${color}"></span>${name}</span>
+          <span class="macro-card-value"><b>${fmt(value)}</b>${target ? ` / ${target}g` : 'g'}</span>
         </div>
-        ${target ? `<div class="macro-bar"><div class="macro-bar-fill" style="width:${pct}%"></div></div>` : ''}
+        ${
+          target
+            ? `<div class="progress-bar thin"><div class="progress-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+          <div class="macro-card-footer"><span>${pct}% of target</span><span>${Math.max(0, target - value)}g left</span></div>`
+            : ''
+        }
       </div>`;
   }
 
   root.innerHTML = `
     <h2>Today — ${today}</h2>
-    <div class="card">
-      ${macroRow('Calories', totals.kcal, targets.kcal, ' kcal')}
-      ${macroRow('Protein', totals.protein, targets.protein, 'g')}
-      ${macroRow('Carbs', totals.carbs, targets.carbs, 'g')}
-      ${macroRow('Fat', totals.fat, targets.fat, 'g')}
-      ${hasAnyTarget ? '' : '<div class="empty-state">Set daily targets in Settings (gear icon) to see progress bars.</div>'}
+    <div class="card cal-card">
+      <div class="cal-card-top">
+        <div>
+          <div class="cal-card-label">Calories</div>
+          <div class="cal-card-value">${fmt(totals.kcal)}${targets.kcal ? `<span class="unit"> / ${targets.kcal}</span>` : ''}</div>
+        </div>
+        ${
+          targets.kcal
+            ? `<div class="cal-card-remaining">
+          <div class="cal-card-remaining-value" style="${calLeft < 0 ? 'color:var(--danger)' : ''}">${fmt(Math.abs(calLeft))}</div>
+          <div class="cal-card-remaining-label">kcal ${calLeft >= 0 ? 'remaining' : 'over'}</div>
+        </div>`
+            : ''
+        }
+      </div>
     </div>
+    ${
+      targets.kcal
+        ? `<div class="cal-ring-wrap">
+      <div class="cal-ring">
+        <svg viewBox="0 0 120 120" width="176" height="176" style="transform:rotate(-90deg)">
+          <defs><linearGradient id="calRingGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent-bright)"></stop><stop offset="1" stop-color="var(--accent)"></stop></linearGradient></defs>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--surface-2)" stroke-width="10"></circle>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="url(#calRingGrad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(Math.min(1, totals.kcal / targets.kcal) * 326.7).toFixed(1)} 326.7"></circle>
+        </svg>
+        <div class="cal-ring-center">
+          <div class="cal-ring-pct">${Math.round(Math.min(100, (totals.kcal / targets.kcal) * 100))}%</div>
+          <div class="cal-ring-label">of daily target</div>
+        </div>
+      </div>
+    </div>`
+        : ''
+    }
+    ${macroCard('Protein', 'var(--macro-protein)', totals.protein, targets.protein)}
+    ${macroCard('Carbs', 'var(--macro-carbs)', totals.carbs, targets.carbs)}
+    ${macroCard('Fat', 'var(--macro-fat)', totals.fat, targets.fat)}
+    ${hasAnyTarget ? '' : '<div class="empty-state">Set daily targets in Settings (gear icon) to see progress bars.</div>'}
   `;
 }
 
@@ -965,6 +1118,24 @@ function renderFoodDashboard() {
 
 function renderFoodGraphs() {
   const { period, series } = state.foodGraphs;
+
+  let chartHeaderHTML = '';
+  if (series.length === 1) {
+    const buckets = NutritionStats.series(state.allFoodLog, period);
+    if (buckets.length > 0) {
+      const key = series[0];
+      const def = FOOD_SERIES_DEFS[key];
+      const vals = buckets.map((d) => d[key]);
+      const latest = vals[vals.length - 1];
+      const delta = vals.length >= 2 ? latest - vals[0] : 0;
+      const unit = key === 'kcal' ? '' : 'g';
+      chartHeaderHTML = `
+        <div class="chart-header">
+          <div><div class="chart-header-title">${def.label}</div><div class="chart-header-value">${fmt(latest)}${unit}</div></div>
+          <span class="delta-badge ${delta > 0 ? 'pos' : 'flat'}">${delta >= 0 ? '+' : ''}${fmt(delta)}${unit}</span>
+        </div>`;
+    }
+  }
 
   root.innerHTML = `
     <h2>Nutrition Graphs</h2>
@@ -980,7 +1151,10 @@ function renderFoodGraphs() {
       <button class="chip ${series.includes('fat') ? 'active' : ''}" data-series="fat">Fat</button>
     </div>
     <div class="chart-wrap">
-      ${state.allFoodLog.length === 0 ? '<div class="empty-state">No food logged yet.</div>' : '<canvas id="food-chart-canvas"></canvas>'}
+      ${chartHeaderHTML}
+      <div class="chart-canvas-box">
+        ${state.allFoodLog.length === 0 ? '<div class="empty-state">No food logged yet.</div>' : '<canvas id="food-chart-canvas"></canvas>'}
+      </div>
     </div>
   `;
 
@@ -1016,23 +1190,30 @@ function renderFoodHistory() {
 
   root.innerHTML = `
     <h2>Nutrition History</h2>
-    <div class="card">
-      ${
-        entries.length === 0
-          ? '<div class="empty-state">No food logged yet.</div>'
-          : `<div class="set-list">${entries
+    ${
+      entries.length === 0
+        ? '<div class="card"><div class="empty-state">No food logged yet.</div></div>'
+        : groupByDate(entries)
+            .map(([date, dayItems]) => {
+              const dayTotal = NutritionStats.totals(dayItems);
+              return `
+          <div class="history-day">
+            <div class="history-day-header"><span>${formatDayLabel(date)}</span><span>${fmt(dayTotal.kcal)} kcal</span></div>
+            <div class="set-list">${dayItems
               .map((e) =>
                 setRowHTML({
                   primary: `${escapeHtml(e.name)}${e.grams != null ? ` (${e.grams}g)` : ''}`,
-                  meta: `${e.date} · ${foodMacroMeta(e)}`,
+                  meta: foodMacroMeta(e),
                   notes: e.notes,
                   editAttr: `data-food-edit="${e.id}"`,
                   deleteAttr: `data-food-delete="${e.id}"`,
                 })
               )
-              .join('')}</div>`
-      }
-    </div>
+              .join('')}</div>
+          </div>`;
+            })
+            .join('')
+    }
   `;
 
   root.querySelectorAll('[data-food-edit]').forEach((btn) =>

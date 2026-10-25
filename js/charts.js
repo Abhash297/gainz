@@ -16,6 +16,31 @@ function shortDate(dateStr) {
   return `${months[m - 1]} ${d}`;
 }
 
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// Scriptable backgroundColor: a top-to-bottom fade from the line's own color
+// down to transparent, computed lazily once the chart area is laid out.
+function areaGradient(hexColor) {
+  return (context) => {
+    const { chart } = context;
+    const { ctx, chartArea } = chart;
+    if (!chartArea) return null;
+    const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+    gradient.addColorStop(0, hexToRgba(hexColor, 0.32));
+    gradient.addColorStop(1, hexToRgba(hexColor, 0));
+    return gradient;
+  };
+}
+
+function themeColor(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
 // Draws a dashed horizontal line + label at each PR weight, spanning the full chart width.
 const prLinesPlugin = {
   id: 'prLines',
@@ -58,16 +83,19 @@ function renderChart(canvas, sets, prs, period, activeSeries, referencePR) {
 
   const datasets = activeSeries
     .filter((key) => key !== 'pctPR' || referencePR) // no PR recorded yet -> can't compute %, skip silently
-    .map((key) => {
+    .map((key, i) => {
       const def = SERIES_DEFS[key];
       return {
         label: def.label,
         data: buckets.map((d) => Math.round(d[key] * 10) / 10),
         borderColor: def.color,
-        backgroundColor: def.color,
+        backgroundColor: i === 0 ? areaGradient(def.color) : def.color,
+        pointBackgroundColor: def.color,
+        fill: i === 0 ? 'origin' : false,
         yAxisID: def.yAxisID,
         tension: 0.25,
         pointRadius: 3,
+        borderWidth: 2.4,
         spanGaps: true,
       };
     });
@@ -82,6 +110,10 @@ function renderChart(canvas, sets, prs, period, activeSeries, referencePR) {
   const maxValue = Math.max(0, ...kgValues);
   const minValue = kgValues.length ? Math.min(...kgValues) : 0;
 
+  const textColor = themeColor('--text');
+  const mutedColor = themeColor('--text-dim');
+  const gridColor = themeColor('--grid-line');
+
   if (activeChart) activeChart.destroy();
   activeChart = new Chart(canvas, {
     type: 'line',
@@ -91,9 +123,12 @@ function renderChart(canvas, sets, prs, period, activeSeries, referencePR) {
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       scales: {
+        x: { ticks: { color: mutedColor }, grid: { color: gridColor } },
         y: {
           position: 'left',
-          title: { display: true, text: 'kg' },
+          title: { display: true, text: 'kg', color: mutedColor },
+          ticks: { color: mutedColor },
+          grid: { color: gridColor },
           suggestedMin: minValue > 0 ? minValue * 0.92 : undefined,
           suggestedMax: maxValue > 0 ? maxValue * 1.08 : undefined,
         },
@@ -101,19 +136,21 @@ function renderChart(canvas, sets, prs, period, activeSeries, referencePR) {
           position: 'right',
           display: activeSeries.includes('volume'),
           grid: { drawOnChartArea: false },
-          title: { display: true, text: 'volume (kg)' },
+          title: { display: true, text: 'volume (kg)', color: mutedColor },
+          ticks: { color: mutedColor },
         },
         y2: {
           position: 'right',
           display: activeSeries.includes('pctPR') && !!referencePR,
           grid: { drawOnChartArea: false },
-          title: { display: true, text: '% of PR' },
+          title: { display: true, text: '% of PR', color: mutedColor },
+          ticks: { color: mutedColor },
           suggestedMin: 0,
           suggestedMax: 110,
         },
       },
       plugins: {
-        legend: { labels: { color: getComputedStyle(document.body).color } },
+        legend: { labels: { color: textColor } },
         prLines: { lines: prLines },
       },
     },
@@ -135,19 +172,26 @@ function renderFoodChart(canvas, foodLog, period, activeSeries) {
   const buckets = NutritionStats.series(foodLog, period);
   const labels = buckets.map((d) => d.anchor);
 
-  const datasets = activeSeries.map((key) => {
+  const datasets = activeSeries.map((key, i) => {
     const def = FOOD_SERIES_DEFS[key];
     return {
       label: def.label,
       data: buckets.map((d) => Math.round(d[key] * 10) / 10),
       borderColor: def.color,
-      backgroundColor: def.color,
+      backgroundColor: i === 0 ? areaGradient(def.color) : def.color,
+      pointBackgroundColor: def.color,
+      fill: i === 0 ? 'origin' : false,
       yAxisID: def.yAxisID,
       tension: 0.25,
       pointRadius: 3,
+      borderWidth: 2.4,
       spanGaps: true,
     };
   });
+
+  const textColor = themeColor('--text');
+  const mutedColor = themeColor('--text-dim');
+  const gridColor = themeColor('--grid-line');
 
   if (activeFoodChart) activeFoodChart.destroy();
   activeFoodChart = new Chart(canvas, {
@@ -158,16 +202,24 @@ function renderFoodChart(canvas, foodLog, period, activeSeries) {
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       scales: {
-        y: { position: 'left', title: { display: true, text: 'kcal' }, display: activeSeries.includes('kcal') },
+        x: { ticks: { color: mutedColor }, grid: { color: gridColor } },
+        y: {
+          position: 'left',
+          title: { display: true, text: 'kcal', color: mutedColor },
+          ticks: { color: mutedColor },
+          grid: { color: gridColor },
+          display: activeSeries.includes('kcal'),
+        },
         y1: {
           position: 'right',
-          title: { display: true, text: 'grams' },
+          title: { display: true, text: 'grams', color: mutedColor },
+          ticks: { color: mutedColor },
           grid: { drawOnChartArea: false },
           display: activeSeries.some((k) => k !== 'kcal'),
         },
       },
       plugins: {
-        legend: { labels: { color: getComputedStyle(document.body).color } },
+        legend: { labels: { color: textColor } },
       },
     },
   });

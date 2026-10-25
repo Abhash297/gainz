@@ -1,4 +1,4 @@
-const CACHE = 'gainz-v14';
+const CACHE = 'gainz-v16';
 const ASSETS = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const ASSETS = [
   './js/charts.js',
   './js/app.js',
   './vendor/chart.umd.js',
+  './vendor/fonts/manrope.woff2',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/apple-touch-icon.png',
