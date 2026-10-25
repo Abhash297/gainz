@@ -1078,8 +1078,8 @@ function renderFoodDashboard() {
           ? `<div class="cal-ring-wrap">
         <div class="cal-ring">
           <svg viewBox="0 0 120 120" width="176" height="176" style="transform:rotate(-90deg)">
-            <defs><linearGradient id="calRingGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent-bright)"></stop><stop offset="1" stop-color="var(--accent)"></stop></linearGradient></defs>
-            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--surface-2)" stroke-width="10"></circle>
+            <defs><linearGradient id="calRingGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--accent-bright)"></stop><stop offset="1" style="stop-color:var(--accent)"></stop></linearGradient></defs>
+            <circle cx="60" cy="60" r="52" fill="none" style="stroke:var(--surface-2)" stroke-width="10"></circle>
             <circle cx="60" cy="60" r="52" fill="none" stroke="url(#calRingGrad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(Math.min(1, totals.kcal / targets.kcal) * 326.7).toFixed(1)} 326.7"></circle>
           </svg>
           <div class="cal-ring-center">
