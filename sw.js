@@ -1,4 +1,4 @@
-const CACHE = 'gainz-v11';
+const CACHE = 'gainz-v12';
 const ASSETS = [
   './',
   './index.html',

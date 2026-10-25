@@ -4,7 +4,7 @@
 // lookups are instant and work fully offline; anything not here falls through
 // to the AI-estimate box or the user's own custom foods.
 const FOODS_DATA = [
-  // Protein
+  // Protein — cooked
   { name: 'Chicken breast, cooked', kcal: 165, protein: 31, carbs: 0, fat: 3.6 },
   { name: 'Chicken thigh, cooked', kcal: 209, protein: 26, carbs: 0, fat: 10.9 },
   { name: 'Turkey breast, cooked', kcal: 135, protein: 30, carbs: 0, fat: 1 },
@@ -19,6 +19,20 @@ const FOODS_DATA = [
   { name: 'Tilapia, cooked', kcal: 128, protein: 26, carbs: 0, fat: 2.7 },
   { name: 'Eggs, whole, cooked', kcal: 155, protein: 13, carbs: 1.1, fat: 11 },
   { name: 'Egg whites', kcal: 52, protein: 11, carbs: 0.7, fat: 0.2 },
+
+  // Protein — raw/uncooked (for weighing before cooking)
+  { name: 'Chicken breast, raw', kcal: 120, protein: 22.5, carbs: 0, fat: 2.6 },
+  { name: 'Chicken thigh, raw', kcal: 119, protein: 20, carbs: 0, fat: 4.3 },
+  { name: 'Turkey breast, raw', kcal: 104, protein: 24, carbs: 0, fat: 0.7 },
+  { name: 'Ground beef 85/15, raw', kcal: 215, protein: 18, carbs: 0, fat: 15 },
+  { name: 'Beef sirloin steak, raw', kcal: 150, protein: 21, carbs: 0, fat: 7 },
+  { name: 'Pork chop, raw', kcal: 143, protein: 21, carbs: 0, fat: 6 },
+  { name: 'Salmon, raw', kcal: 208, protein: 20, carbs: 0, fat: 13 },
+  { name: 'Tuna, raw', kcal: 144, protein: 23, carbs: 0, fat: 5 },
+  { name: 'Shrimp, raw', kcal: 85, protein: 20, carbs: 0.2, fat: 0.5 },
+  { name: 'Cod, raw', kcal: 82, protein: 18, carbs: 0, fat: 0.7 },
+  { name: 'Tilapia, raw', kcal: 96, protein: 20, carbs: 0, fat: 1.7 },
+  { name: 'Eggs, whole, raw', kcal: 143, protein: 13, carbs: 0.7, fat: 9.5 },
   { name: 'Tofu, firm', kcal: 144, protein: 15.5, carbs: 2.8, fat: 8.7 },
   { name: 'Tempeh', kcal: 192, protein: 20, carbs: 7.6, fat: 11 },
   { name: 'Lentils, cooked', kcal: 116, protein: 9, carbs: 20, fat: 0.4 },
@@ -35,13 +49,17 @@ const FOODS_DATA = [
 
   // Carbs / grains
   { name: 'White rice, cooked', kcal: 130, protein: 2.7, carbs: 28, fat: 0.3 },
+  { name: 'White rice, uncooked', kcal: 365, protein: 7, carbs: 80, fat: 0.7 },
   { name: 'Brown rice, cooked', kcal: 123, protein: 2.7, carbs: 26, fat: 1 },
+  { name: 'Brown rice, uncooked', kcal: 370, protein: 7.9, carbs: 77, fat: 2.9 },
   { name: 'Oats, dry', kcal: 389, protein: 17, carbs: 66, fat: 7 },
   { name: 'Oatmeal, cooked', kcal: 71, protein: 2.5, carbs: 12, fat: 1.5 },
   { name: 'Quinoa, cooked', kcal: 120, protein: 4.4, carbs: 21, fat: 1.9 },
+  { name: 'Quinoa, uncooked', kcal: 368, protein: 14, carbs: 64, fat: 6 },
   { name: 'Whole wheat bread', kcal: 247, protein: 13, carbs: 41, fat: 3.4 },
   { name: 'White bread', kcal: 265, protein: 9, carbs: 49, fat: 3.2 },
   { name: 'Pasta, cooked', kcal: 131, protein: 5, carbs: 25, fat: 1.1 },
+  { name: 'Pasta, uncooked', kcal: 371, protein: 13, carbs: 75, fat: 1.5 },
   { name: 'Sweet potato, cooked', kcal: 90, protein: 2, carbs: 21, fat: 0.1 },
   { name: 'Potato, baked', kcal: 93, protein: 2.5, carbs: 21, fat: 0.1 },
   { name: 'Corn', kcal: 96, protein: 3.4, carbs: 21, fat: 1.5 },
@@ -75,8 +93,16 @@ const FOODS_DATA = [
   { name: 'Onion', kcal: 40, protein: 1.1, carbs: 9.3, fat: 0.1 },
   { name: 'Mushrooms', kcal: 22, protein: 3.1, carbs: 3.3, fat: 0.3 },
 
-  // Fats / nuts
+  // Oils — all cooking oils are ~884kcal/100g, 100g fat (pure fat, no protein/carbs)
   { name: 'Olive oil', kcal: 884, protein: 0, carbs: 0, fat: 100 },
+  { name: 'Sunflower oil', kcal: 884, protein: 0, carbs: 0, fat: 100 },
+  { name: 'Vegetable oil', kcal: 884, protein: 0, carbs: 0, fat: 100 },
+  { name: 'Canola oil', kcal: 884, protein: 0, carbs: 0, fat: 100 },
+  { name: 'Avocado oil', kcal: 884, protein: 0, carbs: 0, fat: 100 },
+  { name: 'Sesame oil', kcal: 884, protein: 0, carbs: 0, fat: 100 },
+  { name: 'Coconut oil', kcal: 862, protein: 0, carbs: 0, fat: 100 },
+
+  // Fats / nuts
   { name: 'Butter', kcal: 717, protein: 0.9, carbs: 0.1, fat: 81 },
   { name: 'Peanut butter', kcal: 588, protein: 25, carbs: 20, fat: 50 },
   { name: 'Almonds', kcal: 579, protein: 21, carbs: 22, fat: 50 },
@@ -84,7 +110,6 @@ const FOODS_DATA = [
   { name: 'Cashews', kcal: 553, protein: 18, carbs: 30, fat: 44 },
   { name: 'Chia seeds', kcal: 486, protein: 17, carbs: 42, fat: 31 },
   { name: 'Flaxseed', kcal: 534, protein: 18, carbs: 29, fat: 42 },
-  { name: 'Coconut oil', kcal: 862, protein: 0, carbs: 0, fat: 100 },
 
   // Snacks / prepared / misc
   { name: 'Pizza, cheese', kcal: 266, protein: 11, carbs: 33, fat: 10 },
