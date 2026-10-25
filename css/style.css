@@ -22,6 +22,26 @@
   }
 }
 
+/* Explicit user choice (toggle in header) always wins over OS preference —
+   higher specificity than the bare :root in the media query above, so this
+   applies regardless of source order. */
+:root[data-theme="dark"] {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface-2: #1c2330;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+}
+:root[data-theme="light"] {
+  --bg: #f6f8fa;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --text-dim: #656d76;
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -44,6 +64,7 @@ body {
   justify-content: space-between;
 }
 .topbar h1 { margin: 0; font-size: 1.25rem; }
+.header-actions { display: flex; align-items: center; }
 .icon-btn {
   background: none;
   border: none;

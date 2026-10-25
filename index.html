@@ -11,12 +11,22 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <link rel="stylesheet" href="css/style.css" />
+<script>
+  // Applied before first paint so there's no flash of the wrong theme.
+  (function () {
+    var saved = localStorage.getItem('gainz-theme');
+    if (saved === 'dark' || saved === 'light') document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
 </head>
 <body>
 
 <header class="topbar">
   <h1>GainZ</h1>
-  <button class="icon-btn" id="settings-btn" aria-label="Settings">&#9881;</button>
+  <div class="header-actions">
+    <button class="icon-btn" id="theme-btn" aria-label="Toggle theme">🌙</button>
+    <button class="icon-btn" id="settings-btn" aria-label="Settings">&#9881;</button>
+  </div>
 </header>
 
 <div class="mode-switch" id="mode-switch">

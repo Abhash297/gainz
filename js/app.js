@@ -166,6 +166,31 @@ function setView(view) {
 
 modeSwitchEl.querySelectorAll('.mode-btn').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
 
+// Theme toggle — explicit choice (localStorage) always wins over OS
+// preference; icon reflects the CURRENTLY active theme, not the one you'd
+// switch to. index.html applies a saved choice before first paint to avoid
+// a flash of the wrong theme.
+const themeBtn = document.getElementById('theme-btn');
+
+function effectiveTheme() {
+  const saved = localStorage.getItem('gainz-theme');
+  if (saved === 'dark' || saved === 'light') return saved;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function updateThemeIcon() {
+  themeBtn.textContent = effectiveTheme() === 'dark' ? '🌙' : '☀️';
+}
+
+themeBtn.addEventListener('click', () => {
+  const next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('gainz-theme', next);
+  document.documentElement.setAttribute('data-theme', next);
+  updateThemeIcon();
+});
+
+updateThemeIcon();
+
 document.getElementById('settings-btn').addEventListener('click', () => {
   if (state.view === 'settings') {
     setView(state.viewBeforeSettings || TABS[state.mode][0].id);
