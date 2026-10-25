@@ -92,6 +92,14 @@ form.log-form { display: flex; flex-direction: column; gap: 10px; }
 .field label { font-size: 0.8rem; color: var(--text-dim); }
 .field-row { display: flex; gap: 10px; }
 .field-row .field { flex: 1; }
+.field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  padding: 10px 0;
+}
+.field-checkbox input { width: 20px; height: 20px; flex-shrink: 0; }
 
 input, select, textarea, button {
   font-size: 1rem;
@@ -216,3 +224,15 @@ button.link {
 .settings-row { display: flex; gap: 10px; margin-top: 8px; }
 
 .pr-star { color: #e3b341; }
+
+.top-set-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #e3b341;
+  border: 1px solid #e3b341;
+  border-radius: 4px;
+  padding: 1px 4px;
+  vertical-align: middle;
+  letter-spacing: 0.02em;
+}

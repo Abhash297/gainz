@@ -91,20 +91,35 @@ const Stats = {
     return anchorFnFor(period)(dateStr);
   },
 
-  // Series for graphing: [{key, anchor, topWeight, volume, estMax, pctPR}]
+  // Series for graphing: [{key, anchor, topWeight, workingWeight, volume, estMax, pctPR}]
   // prWeight is optional — when given, each bucket's pctPR = topWeight/prWeight*100,
   // i.e. what % of the all-time PR that session's top set represents (intensity).
+  //
+  // topWeight: the set explicitly flagged isTopSet (heaviest among flagged, if
+  // more than one), falling back to the heaviest set of the day when nothing
+  // was flagged — so untagged sessions behave exactly as before.
+  // workingWeight: average weight of the OTHER sets that day (excluding
+  // whichever specific set instance was chosen as top). If that was the only
+  // set logged, workingWeight equals topWeight — same point, lines coincide,
+  // which is correct when the working set and the top set are the same set.
   series(sets, period, prWeight) {
     return groupBy(sets, period).map((bucket) => {
-      let topWeight = 0;
       let estMax = 0;
       let volume = 0;
       for (const s of bucket.sets) {
-        topWeight = Math.max(topWeight, s.weight);
         estMax = Math.max(estMax, est1RM(s.weight, s.reps));
         volume += s.weight * s.reps;
       }
-      const result = { key: bucket.key, anchor: bucket.anchor, topWeight, volume, estMax };
+
+      const flagged = bucket.sets.filter((s) => s.isTopSet);
+      const topCandidates = flagged.length > 0 ? flagged : bucket.sets;
+      const chosenTop = topCandidates.reduce((best, s) => (s.weight > best.weight ? s : best), topCandidates[0]);
+      const topWeight = chosenTop.weight;
+
+      const others = bucket.sets.filter((s) => s.id !== chosenTop.id);
+      const workingWeight = others.length > 0 ? others.reduce((sum, s) => sum + s.weight, 0) / others.length : topWeight;
+
+      const result = { key: bucket.key, anchor: bucket.anchor, topWeight, workingWeight, volume, estMax };
       if (prWeight) result.pctPR = (topWeight / prWeight) * 100;
       return result;
     });

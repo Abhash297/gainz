@@ -58,11 +58,11 @@ function escapeHtml(str) {
 
 // Stacked card row for a logged set / PR — replaces a table row so Edit/Delete
 // stay full 44pt tap targets and text doesn't get crushed on a phone-width screen.
-function setRowHTML({ primary, meta, notes, editAttr, deleteAttr }) {
+function setRowHTML({ primary, meta, notes, editAttr, deleteAttr, isTopSet }) {
   return `
     <div class="set-row">
       <div class="set-row-info">
-        <span class="set-row-weight">${primary}</span>
+        <span class="set-row-weight">${primary}${isTopSet ? ' <span class="top-set-badge">TOP</span>' : ''}</span>
         <span class="set-row-meta">${meta}</span>
         ${notes ? `<span class="set-row-notes">${escapeHtml(notes)}</span>` : ''}
       </div>
@@ -129,6 +129,10 @@ function renderLog() {
             <input type="number" id="f-reps" step="1" min="1" inputmode="numeric" required />
           </div>
         </div>
+        <label class="field-checkbox">
+          <input type="checkbox" id="f-top-set" />
+          This is my top set for the session
+        </label>
         <div class="field">
           <label for="f-notes">Notes (optional)</label>
           <input type="text" id="f-notes" placeholder="e.g. RPE 8, belt" />
@@ -151,6 +155,7 @@ function renderLog() {
                   notes: s.notes,
                   editAttr: `data-edit="${s.id}"`,
                   deleteAttr: `data-delete="${s.id}"`,
+                  isTopSet: s.isTopSet,
                 })
               )
               .join('')}</div>`
@@ -172,16 +177,17 @@ function renderLog() {
     const weight = document.getElementById('f-weight').value;
     const reps = document.getElementById('f-reps').value;
     const notes = document.getElementById('f-notes').value;
+    const isTopSet = document.getElementById('f-top-set').checked;
     const curLift = document.getElementById('f-lift').value;
     const curDate = document.getElementById('f-date').value;
 
     if (state.log.editingId) {
       const existing = state.allSets.find((s) => s.id === state.log.editingId);
-      await DB.updateSet({ ...existing, lift: curLift, date: curDate, weight: Number(weight), reps: Number(reps), notes });
+      await DB.updateSet({ ...existing, lift: curLift, date: curDate, weight: Number(weight), reps: Number(reps), notes, isTopSet });
       state.log.editingId = null;
       showToast('Set updated');
     } else {
-      await DB.addSet({ lift: curLift, date: curDate, weight, reps, notes });
+      await DB.addSet({ lift: curLift, date: curDate, weight, reps, notes, isTopSet });
       showToast('Set added');
     }
     state.log.lift = curLift;
@@ -208,6 +214,7 @@ function renderLog() {
       document.getElementById('f-weight').value = s.weight;
       document.getElementById('f-reps').value = s.reps;
       document.getElementById('f-notes').value = s.notes || '';
+      document.getElementById('f-top-set').checked = !!s.isTopSet;
     })
   );
 
@@ -278,6 +285,7 @@ function renderGraphs() {
     </div>
     <div class="chip-row">
       <button class="chip ${series.includes('topWeight') ? 'active' : ''}" data-series="topWeight">Top set</button>
+      <button class="chip ${series.includes('workingWeight') ? 'active' : ''}" data-series="workingWeight">Working set</button>
       <button class="chip ${series.includes('volume') ? 'active' : ''}" data-series="volume">Volume</button>
       <button class="chip ${series.includes('pctPR') ? 'active' : ''}" data-series="pctPR" ${referencePR ? '' : 'disabled title="Record a PR first"'}>% of PR</button>
     </div>
@@ -343,6 +351,7 @@ function renderHistory() {
                   notes: s.notes,
                   editAttr: `data-edit="${s.id}"`,
                   deleteAttr: `data-delete="${s.id}"`,
+                  isTopSet: s.isTopSet,
                 })
               )
               .join('')}</div>`
@@ -379,6 +388,7 @@ function renderHistory() {
       document.getElementById('f-weight').value = s.weight;
       document.getElementById('f-reps').value = s.reps;
       document.getElementById('f-notes').value = s.notes || '';
+      document.getElementById('f-top-set').checked = !!s.isTopSet;
     })
   );
 

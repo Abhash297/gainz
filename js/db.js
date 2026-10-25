@@ -93,7 +93,7 @@ function replaceAllIn(storeName, entries) {
 }
 
 const DB = {
-  async addSet({ lift, date, weight, reps, notes }) {
+  async addSet({ lift, date, weight, reps, notes, isTopSet }) {
     const entry = {
       id: uuid(),
       lift,
@@ -101,6 +101,7 @@ const DB = {
       weight: Number(weight),
       reps: Number(reps),
       notes: notes || '',
+      isTopSet: !!isTopSet,
       createdAt: Date.now(),
     };
     return putIn(STORE, entry);

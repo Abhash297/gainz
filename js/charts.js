@@ -5,6 +5,7 @@ let activeChart = null;
 
 const SERIES_DEFS = {
   topWeight: { label: 'Top set (kg)', color: '#1f6feb', yAxisID: 'y' },
+  workingWeight: { label: 'Working set (kg)', color: '#2dd4bf', yAxisID: 'y' },
   volume: { label: 'Volume (kg)', color: '#3fb950', yAxisID: 'y1' },
   pctPR: { label: '% of PR', color: '#a371f7', yAxisID: 'y2' },
 };
@@ -76,7 +77,7 @@ function renderChart(canvas, sets, prs, period, activeSeries, referencePR) {
   // The kg axis must stay scaled to fit every PR line even when "Top set" is
   // toggled off (otherwise a PR line can fall outside the auto-ranged axis
   // and get silently clipped instead of drawn).
-  const topValues = buckets.map((d) => d.topWeight).filter((v) => v > 0);
+  const topValues = buckets.flatMap((d) => [d.topWeight, d.workingWeight]).filter((v) => v > 0);
   const kgValues = [...topValues, ...prLines.map((l) => l.weight)];
   const maxValue = Math.max(0, ...kgValues);
   const minValue = kgValues.length ? Math.min(...kgValues) : 0;
